@@ -6,6 +6,12 @@ import android.net.Uri;
 
 
 import androidx.annotation.NonNull;
+
+import com.combination.qrcodescan.intent.AliPayAwakeIntent;
+import com.combination.qrcodescan.intent.HttpAwakeIntent;
+import com.combination.qrcodescan.intent.ProtocolParsable;
+import com.combination.qrcodescan.intent.WeChatPayAwakeIntent;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -13,23 +19,15 @@ import java.util.regex.Pattern;
 
 public class IntentUtils {
 
-    public interface ProtocolParsable{
-        // 返回true表示解析成功 不往下执行
-        Intent parse(@NonNull String data,@NonNull String prefix);
-    }
+
     private static List<ProtocolParsable> protocolParsables = new ArrayList<>() ;
     static {
         // http协议 后续扩展可以
-        protocolParsables.add((d,  p) -> {
-            if("http".equals(p.toLowerCase())){
-                Uri uri = Uri.parse(d);
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                return intent ;
-            }
-           return null ;
-        });
+        protocolParsables.add(new HttpAwakeIntent());
+        protocolParsables.add(new AliPayAwakeIntent());
+        protocolParsables.add(new WeChatPayAwakeIntent());
     }
-    public static final  Pattern URI_PATTERN = Pattern.compile("(\\w+)://.+");
+    public static final  Pattern URI_PATTERN = Pattern.compile("(\\w+)://(.+)");
 
 
     public static Intent getImageFromGallery() {
@@ -43,7 +41,7 @@ public class IntentUtils {
             Matcher matcher =  URI_PATTERN.matcher(data) ;
             if(matcher.matches()){
                 for (ProtocolParsable p :protocolParsables){
-                    Intent intent = p.parse(data, matcher.group(1)) ;
+                    Intent intent = p.parse(matcher.group(2), matcher.group(1)) ;
                     if(intent != null) return intent ;
                 }
             }
